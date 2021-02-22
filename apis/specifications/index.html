@@ -2,6 +2,5 @@
 layout: none
 ---
 [{% assign specifications = site.data.specifications %}{% for specification in specifications %}
-  {{ specification }},
-{% if forloop.last == true %}{% else %},{% endif %}
+  "{{ specification }}"{% if forloop.last == true %}{% else %},{% endif %}
 {% endfor %}]

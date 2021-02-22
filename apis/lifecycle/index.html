@@ -1,7 +1,6 @@
 ---
 layout: none
 ---
-[{% assign tags = site.data.lifecycle %}{% for tag in tags %}
-  {{ tag }},
-{% if forloop.last == true %}{% else %},{% endif %}
+[{% assign specifications = site.data.lifecycle %}{% for specification in specifications %}
+  "{{ specification }}"{% if forloop.last == true %}{% else %},{% endif %}
 {% endfor %}]
