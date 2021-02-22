@@ -1,0 +1,144 @@
+---
+layout: default
+title: My Github YAML Editor Micro Tool Base
+---
+
+<div class="sidebar-page-container" style="margin: 0px; padding: 0px;">
+  <div class="auto-container" style="margin-bottom: 0px; padding-bottom: 0px;">
+    <div class="content-side col-lg-12 col-md-12 col-sm-12">
+
+      <script type="text/javascript">
+
+        var file = "_data/openapi-news.json";
+        var org_name = '{{ site.github_user }}';
+        var repo_name = '{{ site.github_repo }}';
+
+        function loadpage(){
+          var oauthToken = document.getElementById('auth-token').value;
+          if(oauthToken !=''){ Cookies.set('token', oauthToken); }
+          oauthToken = Cookies.get('token');
+          if(oauthToken!=''){
+            var github = new Github({token: oauthToken,auth: "oauth"});
+            var repo = github.getRepo(org_name,repo_name);
+            repo.getTree('main?recursive=true', function(err, tree) {
+              if(err == null && oauthToken != null)
+                {
+                repo.read('main', file, function(err, data) {
+                  document.getElementById('datastore').value = data;
+                  });
+                }
+              else
+                {
+                alert('You do not have access to the repo or the token is not valid!');
+                }
+              });
+            }
+          }
+
+        function keep(id){
+          var datastore = document.getElementById('datastore').value;
+          if(datastore == ''){
+            loadpage();
+            datastore = document.getElementById('datastore').value;
+          }
+          datastore = JSON.parse(datastore);
+          datastore[id].keep = true;
+          datastore[id].ignore = false;
+          datastore[id].new = false;
+          document.getElementById('datastore').value = JSON.stringify(datastore, null, 2);
+        }
+
+        function ignore(id){
+          var datastore = document.getElementById('datastore').value;
+          if(datastore == ''){
+            loadpage();
+            datastore = document.getElementById('datastore').value;
+          }
+          datastore = JSON.parse(datastore);
+          datastore[id].keep = false;
+          datastore[id].ignore = true;
+          datastore[id].new = false;
+          document.getElementById('datastore').value = JSON.stringify(datastore, null, 2);
+        }
+
+        function saveData(){
+
+          var datastore = document.getElementById('datastore').value;
+
+          //datastore = JSON.parse(datastore);
+
+          //$.each(datastore, function(key, value) {
+          //  datastore[key].keep = true;
+          //  datastore[key].ignore = false;
+          //  datastore[key].new = true;
+          //  });
+
+          //datastore = JSON.stringify(datastore, null, 2);
+
+          var oauthToken = Cookies.get('token');
+          //console.log("oauthToken: " + oauthToken);
+          var github = new Github({token: oauthToken,auth: "oauth"});
+          var repo = github.getRepo(org_name,repo_name);
+
+          repo.getTree('main?recursive=true', function(err, tree) {
+            //console.log("err:" + err);
+            //console.log("tree:" + tree);
+            $.each(tree, function(treeKey, treeValue) {
+              var writepath = file;
+              var path = treeValue['path'];
+              var sha = treeValue['sha'];
+              //console.log(path + ' == ' + writepath);
+              if(path==writepath)
+                {
+                //console.log(writepath);
+                //console.log(datastore);
+                repo.writemanual('main',writepath, unescape(encodeURIComponent(datastore)), 'Saving Data', sha, function(err) { console.log("err: " + err); });
+                alert("Saved " + writepath + "!");
+                }
+              });
+            });
+
+          }
+
+          loadpage();
+
+      </script>
+      <h3>News</h3>
+      <p>This is a utility to curate the automated pulling of news for use in the API Specification Toolbox. This is the human curation portion of the journey. This data has been pulled using the Bing search API, and now we need to filter out the articles that are not worthy of publishing to the toolbox.</p>
+      <p>You can <a href="https://github.com/{{ site.github_user }}//{{ site.github_repo }}/issues">submit a Github issue for the project</a>, or hit me up at <a href="https://twitter.com/apievangelist">@apievangelist</a> to be added to permissions for the repository, so that you can help curate news here.
+      <textarea rows="5" cols="100" name="datastore" id="datastore" style="display: none;"></textarea>
+      <br><table width="100%" border="0" cellpadding="3" id="token">
+          <tr>
+            <td align="right" style="border: 1px solid #FFF;" style="border: 1px solid #000;"><a href="https://github.com/settings/tokens" target="_blank"><strong>Github Personal Auth Token:</strong></a></td>
+            <td align="left" style="border: 1px solid #FFF; padding-left: 5px;"><input type="text" name="auth-token" id="auth-token" value="hey" size="50" onchange="loadpage();" style="border: 1px solid #000;" /></td>
+          </tr>
+      </table><br>
+      <table width="100%" border="0" cellpadding="3">
+        <tr>
+          <td width="50" align="center"><strong>Keep</strong></td>
+          <td width="50" align="center"><strong>Ignore</strong></td>
+          <td><strong>News Article</strong></td>
+        </tr>
+        {% assign count = 0 %}
+        {% for item in site.data.openapi-news %}
+          {% if item.new == true %}
+            <tr>
+              <td width="50" align="center" style="border: 1px solid #FFF;">keep: <input type="radio" id="keep{{ count }}" name="keep{{ count }}" onclick="keep('{{ count }}');"></td>
+              <td width="50" align="center" style="border: 1px solid #FFF;">ignore: <input type="radio" id="keep{{ count }}" name="keep{{ count }}" onclick="ignore('{{ count }}');"></td>
+              <td style="border: 1px solid #FFF; padding: 7px;">
+                <a href="{{ item.url }}" target="_blank">{{ item.name }}</a> (<a href="https://{{ item.domain }}">{{ item.domain }}</a>) - {{ item.snippet }}
+              </td>
+            </tr>
+          {% endif %}
+          {% assign count = count | plus: 1 %}
+        {% endfor %}
+      </table>
+      <br>
+      <center><input style="padding: 5px; border: 2px solid #000;" type="button" name="SaveData" id="SaveData" value="Save Data" onclick="saveData();" /></center>
+      <p><br />Once you have a valid Github OAuth toke entered into the text box above, the page will load, and you should be able to save any changes to the underlying Github repository. Making for a completely self-contained, interactive web application, that can be used for any number of purposes.
+
+
+
+    </div>
+  </div>
+</div>

@@ -1,0 +1,8 @@
+---
+layout: none
+---
+[{% assign tags = site.data.lifecycle %}{% for tag in tags %}
+{
+  {{ tag }},
+}{% if forloop.last == true %}{% else %},{% endif %}
+{% endfor %}]
